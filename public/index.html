@@ -30,14 +30,18 @@
     .meta { margin: 12px 0; font-size: .95rem; }
     .meta .user { font-weight: 700; }
     .meta .text { color: #0f1419; white-space: pre-wrap; word-break: break-word; }
-    .q-title { font-weight: 700; margin: 14px 0 8px; }
-    .q { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #eff3f4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
-    .q.best { border-color: #1d9bf0; background: #f0f9ff; }
-    .badge { font-size: .75rem; font-weight: 700; background: #1d9bf0; color: #fff; padding: 3px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
-    .badge.hd { background: #00ba7c; }
-    .dl { padding: 8px 14px; font-size: .9rem; text-decoration: none; }
-    a.dl { display: inline-block; background: #1d9bf0; color: #fff; border-radius: 999px; font-weight: 700; }
-    a.dl:hover { background: #1a8cd8; }
+    .q-title { font-weight: 700; margin: 14px 0 12px; font-size: 1rem; }
+    .quality-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .quality-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px 12px; border: 2px solid #eff3f4; border-radius: 12px; background: #fff; cursor: pointer; transition: all 0.2s ease; text-align: center; }
+    .quality-card:hover { border-color: #1d9bf0; background: #f0f9ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(29, 155, 240, 0.1); }
+    .quality-card.best { border-color: #1d9bf0; background: #f0f9ff; }
+    .quality-resolution { font-size: 1.25rem; font-weight: 700; color: #0f1419; }
+    .quality-label { font-size: 0.85rem; color: #536471; }
+    .quality-badge { font-size: 0.7rem; font-weight: 700; background: #1d9bf0; color: #fff; padding: 3px 8px; border-radius: 999px; }
+    .quality-badge.hd { background: #00ba7c; }
+    .quality-badge.full-hd { background: #f91880; }
+    .quality-card a { padding: 8px 12px; font-size: 0.9rem; text-decoration: none; background: #1d9bf0; color: #fff; border-radius: 8px; font-weight: 600; display: inline-block; width: 100%; transition: background 0.2s; }
+    .quality-card a:hover { background: #1a8cd8; }
     .steps { margin-top: 20px; font-size: .9rem; color: #536471; }
     .steps ol { padding-left: 20px; margin: 8px 0 0; }
     .steps li { margin: 4px 0; }
@@ -57,7 +61,8 @@
     <img id="thumb" class="thumb" src="" alt="Thumbnail" />
     <p><strong>Pengguna:</strong> <span id="user"></span></p>
     <p id="text"></p>
-    <ul class="download-list" id="downloadList"></ul>
+    <h3 class="q-title">Pilih Kualitas Video:</h3>
+    <div class="quality-grid" id="qualityGrid"></div>
   </div>
   <script>
     const fetchBtn = document.getElementById('fetchBtn');
@@ -68,7 +73,7 @@
     const thumbImg = document.getElementById('thumb');
     const userSpan = document.getElementById('user');
     const textP = document.getElementById('text');
-    const downloadList = document.getElementById('downloadList');
+    const qualityGrid = document.getElementById('qualityGrid');
 
     // Show/hide clear button based on input
     tweetUrl.addEventListener('input', () => {
@@ -91,7 +96,7 @@
       if (!url) { showError('URL tidak boleh kosong'); return; }
       statusDiv.textContent = 'Mengambil info video...';
       resultDiv.style.display = 'none';
-      downloadList.innerHTML = '';
+      qualityGrid.innerHTML = '';
       try {
         const resp = await fetch('/api/info', {
           method: 'POST',
@@ -107,13 +112,28 @@
         // Build download links
         data.videos.forEach((v, idx) => {
           v.variants.forEach(vr => {
-            const a = document.createElement('a');
-            a.href = `/api/download?url=${encodeURIComponent(vr.url)}&filename=${encodeURIComponent(`twitter-${data.id}-${vr.label.replace(/\s+/g,'_')}.mp4`)}`;
-            a.textContent = vr.label;
-            a.target = '_blank';
-            const li = document.createElement('li');
-            li.appendChild(a);
-            downloadList.appendChild(li);
+            const card = document.createElement('div');
+            card.className = 'quality-card';
+            if (vr.label.toLowerCase().includes('full hd') || vr.label.toLowerCase().includes('1080')) {
+              card.classList.add('best');
+            }
+            const res = document.createElement('div');
+            res.className = 'quality-resolution';
+            res.textContent = vr.label;
+            const link = document.createElement('a');
+            link.href = `/api/download?url=${encodeURIComponent(vr.url)}&filename=${encodeURIComponent(`twitter-${data.id}-${vr.label.replace(/\s+/g,'_')}.mp4`)}`;
+            link.textContent = 'Unduh';
+            link.target = '_blank';
+            const badge = document.createElement('span');
+            badge.className = 'quality-badge';
+            if (vr.label.toLowerCase().includes('full hd')) badge.textContent = 'Full HD';
+            else if (vr.label.toLowerCase().includes('hd')) badge.textContent = 'HD';
+            else if (vr.label.toLowerCase().includes('sd')) badge.textContent = 'SD';
+            else badge.textContent = 'Video';
+            card.appendChild(res);
+            card.appendChild(badge);
+            card.appendChild(link);
+            qualityGrid.appendChild(card);
           });
         });
         resultDiv.style.display = 'block';
