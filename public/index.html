@@ -11,10 +11,13 @@
     .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
     h1 { text-align: center; margin: 0 0 4px; font-size: 1.5rem; }
     .sub { text-align: center; color: #536471; margin: 0 0 20px; font-size: .95rem; }
-    .form { display: flex; gap: 8px; }
-    input[type="url"] { flex: 1; padding: 12px 14px; font-size: 1rem; border: 2px solid #cfd9de; border-radius: 999px; outline: none; min-width: 0; }
+    .form { display: flex; gap: 8px; position: relative; }
+    .input-group { flex: 1; position: relative; display: flex; align-items: center; }
+    input[type="url"] { width: 100%; padding: 12px 45px 12px 14px; font-size: 1rem; border: 2px solid #cfd9de; border-radius: 999px; outline: none; }
     input[type="url"]:focus { border-color: #1d9bf0; }
-    button { padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; background: #1d9bf0; color: #fff; border: 0; border-radius: 999px; white-space: nowrap; }
+    .clear-btn { position: absolute; right: 14px; background: #eff3f4; border: none; border-radius: 50%; width: 24px; height: 24px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #536471; font-size: 14px; font-weight: bold; transition: background 0.2s; }
+    .clear-btn:hover { background: #e7e7e8; color: #0f1419; }
+    button#fetchBtn { padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; background: #1d9bf0; color: #fff; border: 0; border-radius: 999px; white-space: nowrap; }
     button:hover { background: #1a8cd8; }
     button:disabled { opacity: .6; cursor: wait; }
     .hint { font-size: .85rem; color: #536471; margin-top: 10px; text-align: center; }
@@ -43,7 +46,10 @@
 <body>
   <h1>Twitter Video Downloader</h1>
   <div class="form">
-    <input type="url" id="tweetUrl" placeholder="Masukkan URL tweet (X) yang berisi video" />
+    <div class="input-group">
+      <input type="url" id="tweetUrl" placeholder="Masukkan URL tweet (X) yang berisi video" />
+      <button type="button" id="clearBtn" class="clear-btn" title="Hapus">✕</button>
+    </div>
     <button id="fetchBtn">Ambil Video</button>
   </div>
   <div id="status"></div>
@@ -55,6 +61,7 @@
   </div>
   <script>
     const fetchBtn = document.getElementById('fetchBtn');
+    const clearBtn = document.getElementById('clearBtn');
     const tweetUrl = document.getElementById('tweetUrl');
     const statusDiv = document.getElementById('status');
     const resultDiv = document.getElementById('result');
@@ -62,6 +69,18 @@
     const userSpan = document.getElementById('user');
     const textP = document.getElementById('text');
     const downloadList = document.getElementById('downloadList');
+
+    // Show/hide clear button based on input
+    tweetUrl.addEventListener('input', () => {
+      clearBtn.style.display = tweetUrl.value ? 'flex' : 'none';
+    });
+
+    // Clear input logic
+    clearBtn.addEventListener('click', () => {
+      tweetUrl.value = '';
+      clearBtn.style.display = 'none';
+      tweetUrl.focus();
+    });
 
     function showError(msg) {
           statusDiv.innerHTML = `<p class="error">⚠ ${msg}</p>`;
