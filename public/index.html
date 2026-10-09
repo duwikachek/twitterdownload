@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>X Video Downloader – Download Video Twitter Full HD</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f8fa; color: #0f1419; margin: 0; padding: 24px 16px 48px; }
+    .wrap { max-width: 620px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+    h1 { text-align: center; margin: 0 0 4px; font-size: 1.5rem; }
+    .sub { text-align: center; color: #536471; margin: 0 0 20px; font-size: .95rem; }
+    .form { display: flex; gap: 8px; }
+    input[type="url"] { flex: 1; padding: 12px 14px; font-size: 1rem; border: 2px solid #cfd9de; border-radius: 999px; outline: none; min-width: 0; }
+    input[type="url"]:focus { border-color: #1d9bf0; }
+    button { padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; background: #1d9bf0; color: #fff; border: 0; border-radius: 999px; white-space: nowrap; }
+    button:hover { background: #1a8cd8; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .hint { font-size: .85rem; color: #536471; margin-top: 10px; text-align: center; }
+    .hint code { background: #eff3f4; padding: 2px 6px; border-radius: 6px; }
+    #status { margin-top: 14px; text-align: center; }
+    .error { color: #f4212e; background: #fde8e9; padding: 10px 14px; border-radius: 10px; }
+    .loading { color: #536471; }
+    .result { margin-top: 18px; border-top: 1px solid #eff3f4; padding-top: 18px; }
+    video, .thumb { width: 100%; border-radius: 12px; background: #000; display: block; }
+    .meta { margin: 12px 0; font-size: .95rem; }
+    .meta .user { font-weight: 700; }
+    .meta .text { color: #0f1419; white-space: pre-wrap; word-break: break-word; }
+    .q-title { font-weight: 700; margin: 14px 0 8px; }
+    .q { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #eff3f4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+    .q.best { border-color: #1d9bf0; background: #f0f9ff; }
+    .badge { font-size: .75rem; font-weight: 700; background: #1d9bf0; color: #fff; padding: 3px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+    .badge.hd { background: #00ba7c; }
+    .dl { padding: 8px 14px; font-size: .9rem; text-decoration: none; }
+    a.dl { display: inline-block; background: #1d9bf0; color: #fff; border-radius: 999px; font-weight: 700; }
+    a.dl:hover { background: #1a8cd8; }
+    .steps { margin-top: 20px; font-size: .9rem; color: #536471; }
+    .steps ol { padding-left: 20px; margin: 8px 0 0; }
+    .steps li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Twitter Video Downloader</h1>
+  <div class="form">
+    <input type="url" id="tweetUrl" placeholder="Masukkan URL tweet (X) yang berisi video" />
+    <button id="fetchBtn">Ambil Video</button>
+  </div>
+  <div id="status"></div>
+  <div class="result" id="result" style="display:none;">
+    <img id="thumb" class="thumb" src="" alt="Thumbnail" />
+    <p><strong>Pengguna:</strong> <span id="user"></span></p>
+    <p id="text"></p>
+    <ul class="download-list" id="downloadList"></ul>
+  </div>
+  <script>
+    const fetchBtn = document.getElementById('fetchBtn');
+    const tweetUrl = document.getElementById('tweetUrl');
+    const statusDiv = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+    const thumbImg = document.getElementById('thumb');
+    const userSpan = document.getElementById('user');
+    const textP = document.getElementById('text');
+    const downloadList = document.getElementById('downloadList');
+
+    function showError(msg) {
+          statusDiv.innerHTML = `<p class="error">⚠ ${msg}</p>`;
+    }
+
+    fetchBtn.addEventListener('click', async () => {
+      const url = tweetUrl.value.trim();
+      if (!url) { showError('URL tidak boleh kosong'); return; }
+      statusDiv.textContent = 'Mengambil info video...';
+      resultDiv.style.display = 'none';
+      downloadList.innerHTML = '';
+      try {
+        const resp = await fetch('/api/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Gagal');
+        // Populate UI
+        thumbImg.src = data.thumb || '';
+        userSpan.textContent = data.user || '';
+        textP.textContent = data.text || '';
+        // Build download links
+        data.videos.forEach((v, idx) => {
+          v.variants.forEach(vr => {
+            const a = document.createElement('a');
+            a.href = `/api/download?url=${encodeURIComponent(vr.url)}&filename=${encodeURIComponent(`twitter-${data.id}-${vr.label.replace(/\s+/g,'_')}.mp4`)}`;
+            a.textContent = vr.label;
+            a.target = '_blank';
+            const li = document.createElement('li');
+            li.appendChild(a);
+            downloadList.appendChild(li);
+          });
+        });
+        resultDiv.style.display = 'block';
+        statusDiv.textContent = '';
+      } catch (e) {
+        showError('Error: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>
